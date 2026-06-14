@@ -7,6 +7,11 @@ const CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
 const ORIGIN = process.env.ORIGIN || "https://adav33ze.com";
 const PORT = process.env.PORT || 3000;
 
+// Health check
+app.get("/", (req, res) => {
+  res.send("OAuth server is running. Use /auth to begin.");
+});
+
 // Route 1: Start OAuth flow — redirect to GitHub
 app.get("/auth", (req, res) => {
   const params = new URLSearchParams({
@@ -83,4 +88,8 @@ function sendMessage(res, status, content) {
 
 app.listen(PORT, () => {
   console.log(`OAuth server running on port ${PORT}`);
+  console.log(`Routes: GET /auth, GET /callback`);
+  console.log(`ORIGIN: ${ORIGIN}`);
+  console.log(`CLIENT_ID set: ${!!CLIENT_ID}`);
+  console.log(`CLIENT_SECRET set: ${!!CLIENT_SECRET}`);
 });
