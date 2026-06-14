@@ -17,7 +17,7 @@ app.get("/auth", (req, res) => {
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
     scope: "repo,user",
-    redirect_uri: `${req.protocol}://${req.get("host")}/callback`,
+    redirect_uri: "https://portfolio-oauth-1.onrender.com/callback",
   });
   res.redirect(`https://github.com/login/oauth/authorize?${params}`);
 });
@@ -41,7 +41,7 @@ app.get("/callback", async (req, res) => {
         client_id: CLIENT_ID,
         client_secret: CLIENT_SECRET,
         code,
-        redirect_uri: `${req.protocol}://${req.get("host")}/callback`,
+        redirect_uri: "https://portfolio-oauth-1.onrender.com/callback",
       }),
     });
 
