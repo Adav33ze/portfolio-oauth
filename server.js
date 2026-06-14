@@ -7,27 +7,27 @@ const CLIENT_SECRET = process.env.OAUTH_CLIENT_SECRET;
 const ORIGIN = process.env.ORIGIN || "https://adav33ze.com";
 const PORT = process.env.PORT || 3000;
 
-// Health check
 app.get("/", (req, res) => {
-  res.send("OAuth server is running. Use /auth to begin.");
+  res.send("OAuth server is running.");
 });
 
-// Route 1: Start OAuth flow — redirect to GitHub
+// Route 1: Start OAuth flow
 app.get("/auth", (req, res) => {
   const params = new URLSearchParams({
     client_id: CLIENT_ID,
     scope: "repo,user",
     redirect_uri: "https://portfolio-oauth-1.onrender.com/callback",
+    state: "decap-cms",
   });
   res.redirect(`https://github.com/login/oauth/authorize?${params}`);
 });
 
-// Route 2: GitHub callback — exchange code for token
+// Route 2: GitHub sends code here
 app.get("/callback", async (req, res) => {
   const { code } = req.query;
 
   if (!code) {
-    return sendMessage(res, "error", { error: "Missing code" });
+    return res.redirect(`${ORIGIN}/admin/#error=missing_code`);
   }
 
   try {
@@ -48,45 +48,17 @@ app.get("/callback", async (req, res) => {
     const data = await response.json();
 
     if (data.error || !data.access_token) {
-      return sendMessage(res, "error", { error: data.error || "No token received" });
+      return res.redirect(`${ORIGIN}/admin/#error=${data.error || "no_token"}`);
     }
 
-    return sendMessage(res, "success", {
-      token: data.access_token,
-      provider: "github",
-    });
+    // Redirect back to admin with token
+    const token = data.access_token;
+    return res.redirect(`${ORIGIN}/admin/#token=${token}&provider=github`);
+
   } catch (err) {
-    return sendMessage(res, "error", { error: "Server error: " + err.message });
+    return res.redirect(`${ORIGIN}/admin/#error=server_error`);
   }
 });
-
-function sendMessage(res, status, content) {
-  const message = `authorization:github:${status}:${JSON.stringify(content)}`;
-  res.send(`<!DOCTYPE html>
-<html>
-<body>
-<script>
-(function() {
-  var message = ${JSON.stringify(message)};
-  var origin = ${JSON.stringify(ORIGIN)};
-  
-  // Try postMessage to opener first
-  if (window.opener && !window.opener.closed) {
-    window.opener.postMessage(message, origin);
-    setTimeout(function() { window.close(); }, 500);
-  } else {
-    // No opener - store in sessionStorage and redirect to admin
-    try {
-      sessionStorage.setItem('netlify-cms-auth', message);
-    } catch(e) {}
-    window.location.replace(origin + '/admin/#' + encodeURIComponent(message));
-  }
-})();
-</script>
-<p>Authenticating, please wait...</p>
-</body>
-</html>`);
-}
 
 app.listen(PORT, () => {
   console.log(`OAuth server running on port ${PORT}`);
