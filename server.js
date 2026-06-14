@@ -67,21 +67,23 @@ function sendMessage(res, status, content) {
 <body>
 <script>
 (function() {
-  function send() {
-    window.opener.postMessage(
-      ${JSON.stringify(message)},
-      ${JSON.stringify(ORIGIN)}
-    );
-    window.close();
-  }
-  if (window.opener) {
-    send();
+  var message = ${JSON.stringify(message)};
+  var origin = ${JSON.stringify(ORIGIN)};
+  
+  // Try postMessage to opener first
+  if (window.opener && !window.opener.closed) {
+    window.opener.postMessage(message, origin);
+    setTimeout(function() { window.close(); }, 500);
   } else {
-    document.write('<p>Auth complete. You may close this window.</p>');
+    // No opener - store in sessionStorage and redirect to admin
+    try {
+      sessionStorage.setItem('netlify-cms-auth', message);
+    } catch(e) {}
+    window.location.replace(origin + '/admin/#' + encodeURIComponent(message));
   }
 })();
 </script>
-<p>Authenticating...</p>
+<p>Authenticating, please wait...</p>
 </body>
 </html>`);
 }
